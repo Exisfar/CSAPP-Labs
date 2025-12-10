@@ -57,7 +57,7 @@ def main():
     print("Part A: Testing cache simulator")
     print("Running ./test-csim")
     p = subprocess.Popen("./test-csim", shell=True, stdout=subprocess.PIPE)
-    stdout_data = p.communicate()[0]
+    stdout_data = p.communicate()[0].decode("utf-8")  # Decode bytes to string
 
     # Emit the output from test-csim
     stdout_data = re.split("\n", stdout_data)
@@ -76,7 +76,7 @@ def main():
         shell=True,
         stdout=subprocess.PIPE,
     )
-    stdout_data = p.communicate()[0]
+    stdout_data = p.communicate()[0].decode("utf-8")  # Decode bytes to string
     result32 = re.findall(r"(\d+)", stdout_data)
 
     # 64x64 transpose
@@ -86,7 +86,7 @@ def main():
         shell=True,
         stdout=subprocess.PIPE,
     )
-    stdout_data = p.communicate()[0]
+    stdout_data = p.communicate()[0].decode("utf-8")  # Decode bytes to string
     result64 = re.findall(r"(\d+)", stdout_data)
 
     # 61x67 transpose
@@ -96,11 +96,11 @@ def main():
         shell=True,
         stdout=subprocess.PIPE,
     )
-    stdout_data = p.communicate()[0]
+    stdout_data = p.communicate()[0].decode("utf-8")  # Decode bytes to string
     result61 = re.findall(r"(\d+)", stdout_data)
 
     # Compute the scores for each step
-    csim_cscore = map(int, resultsim[0:1])
+    csim_cscore = list(map(int, resultsim[0:1]))  # Convert map to list
     trans_cscore = int(result32[0]) * int(result64[0]) * int(result61[0])
     miss32 = int(result32[1])
     miss64 = int(result64[1])
