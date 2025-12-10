@@ -20,8 +20,25 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded. 
  */
 char transpose_submit_desc[] = "Transpose submission";
+/* 采用分块（blocking）方式，使子块能够驻留在缓存中，从而减少miss次数 */
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
+    int i, j, k, l;
+    // ? cache块大小为32B，每个cache行能存8个4字节int。这里模拟的cache有1KiB，cache最多有32行。模拟cache最多容纳个256字节int，所以block_size最好设为16。
+    int block_size = 16;
+    int tmp;
+
+    // 在块中处理来改进缓存的局部性
+    for (i = 0; i < N; i += block_size) {
+        for (j = 0; j < M; j += block_size) {
+            for (k = i; k < i + block_size && k < N; k++) {
+                for (l = j; l < j + block_size && l < M; l++) {
+                    tmp = A[k][l];
+                    B[l][k] = tmp;
+                }
+            }
+        }
+    }
 }
 
 /* 
@@ -35,8 +52,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N])
 {
-    int i, j, tmp;
+    int i, j, tmp; // 为什么要有tmp：如果A、B是相同矩阵，没有tmp就会出错
 
+    // * 1. A访问模式好：按行读取A（连续内存），一次cache块hit多个元素
+    // ! 2. B访问模式差：按列写入B（跳跃式访问），每次写B都是不同cache行，导致大量miss（Cache只有1KB，32字节block，存不了整列。每写一个B[j][i]就可能evict之前的数据）
     for (i = 0; i < N; i++) {
         for (j = 0; j < M; j++) {
             tmp = A[i][j];
